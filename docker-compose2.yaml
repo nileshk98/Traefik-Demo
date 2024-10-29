@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  traefik:
+    image: traefik:v2.10
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    labels:
+      - "traefik.http.middlewares.maintenance.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.maintenance.redirectregex.regex=^https?://(.*)"
+      - "traefik.http.middlewares.maintenance.redirectregex.replacement=http://maintenance.example.com"
+
+  webapp:
+    image: nginx:alpine
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.webapp.rule=Host(`webapp.example.com`)"
+      - "traefik.http.routers.webapp.entrypoints=web"
+      - "traefik.http.routers.webapp.middlewares=maintenance"
